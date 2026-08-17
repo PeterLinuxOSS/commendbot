@@ -5,12 +5,25 @@ import datetime
 import asyncstdlib as a
 import cooldowns
 import nextcord
-from nextcord import Colour, Interaction, Member, SlashOption, User
+from nextcord import Color, Colour, Interaction, Member, SlashOption, User
 
 import config
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+from cogs.commands_views import removebal, selectaddslot, selectgiftslot, selectremoveslot
+
+# (nothing needed from cogs.commend)
+from cogs.helpers import helpers
+from utils import (
+    admins,
+    bluepr,
+    convert_value,
+    db,
+    embed_error,
+    emebd_remove,
+    feescalc,
+    sview,
+    timestamp,
+    tz,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 

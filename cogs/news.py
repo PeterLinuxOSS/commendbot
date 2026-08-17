@@ -1,8 +1,8 @@
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
-from cogs.helpers import *
-from utils import *
+# (nothing needed from cogs.helpers)
+# (nothing needed from utils)
 
 
 class news(commands.Cog):

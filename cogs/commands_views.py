@@ -10,11 +10,23 @@ from nextcord.ext.commands import Bot
 from pymongo import ReturnDocument
 
 import config
-from cogs.commend import *
-from cogs.helpers import *
+
+# (nothing needed from cogs.commend)
+from cogs.helpers import helpers
 from cogs.slot import slots_stats
 from cogs.transactions_logs import logs
-from utils import *
+from utils import (
+    bluepr,
+    can_dm_user,
+    db,
+    emebd_remove,
+    get_user_avatar,
+    is_number,
+    sview,
+    timestamp,
+    tz,
+    user_template,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 

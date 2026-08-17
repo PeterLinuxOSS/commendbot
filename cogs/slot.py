@@ -8,8 +8,8 @@ from nextcord import Colour, Interaction
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
-from cogs.helpers import *
-from utils import *
+# (nothing needed from cogs.helpers)
+from utils import db, find_slots, sview, timestamp
 
 
 class slot_select(nextcord.ui.Select):

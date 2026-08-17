@@ -1,8 +1,11 @@
 import asyncio
 import calendar
 import datetime
+import json
+import math
 import time
 
+import asyncstdlib as a
 import nextcord
 from dateutil.relativedelta import relativedelta
 from nextcord import Colour, TextChannel, User
@@ -10,10 +13,22 @@ from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
 import config
-from cogs.commend import *
 from cogs.commend_menu import commend_menu
-from cogs.helpers import *
-from utils import *
+
+# (nothing needed from cogs.commend)
+from cogs.helpers import helpers
+from utils import (
+    can_dm_user,
+    cprint,
+    db,
+    embed_error,
+    get_datetime_utc,
+    get_lang,
+    logger,
+    tz,
+    tzsk,
+    utc_to_local,
+)
 
 
 class slottrans(commands.Cog):

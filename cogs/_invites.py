@@ -5,9 +5,10 @@ from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
 import config
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+
+# (nothing needed from cogs.commend)
+from cogs.helpers import helpers
+from utils import db, get_datetime_utc, user_template
 
 
 class Invites(commands.Cog):

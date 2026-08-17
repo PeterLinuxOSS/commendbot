@@ -2,16 +2,36 @@
 
 import datetime
 
+import asyncstdlib as a
 import nextcord
-from nextcord import Colour, Interaction
+from nextcord import Colour, Interaction, SelectOption
 from nextcord.ext.commands import Bot
 from steam_web_api import Steam
 
 import config
-from cogs.commend import *
+import utils.translates as translates
 from cogs.helpers import helpers
 from cogs.keygen import keygen
-from utils import *
+
+# (nothing needed from cogs.commend)
+from utils import (
+    can_dm_user,
+    convert_lang,
+    cprint,
+    db,
+    delete_autodelete,
+    embed_error,
+    emojilist,
+    get_lang,
+    get_rules,
+    get_steamID64,
+    logger,
+    support_server_link,
+    sview,
+    timestamp,
+    tz,
+    user_template,
+)
 
 steam = Steam(config.STEAM_API_KEY)
 

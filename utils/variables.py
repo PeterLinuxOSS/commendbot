@@ -20,7 +20,7 @@ from termcolor import cprint
 
 import config
 import utils.translates as translates
-from utils.mongodb import *
+from utils.mongodb import db
 
 alphabet = string.ascii_letters + string.digits
 OWNERID = config.OWNER_ID
@@ -154,6 +154,12 @@ def prettify(amount, separator=','):
         return new
     else:
         return prettify(new)
+
+support_server_link = config.SUPPORT_SERVER_INVITE
+
+# Staff allowed to run the admin commands, owner included.
+admins = [*config.ADMIN_IDS, config.OWNER_ID]
+
 
 def sub_types(num:int) -> str:
     dl = {0:"Local",1:"Premium",2:"Standard - Server",3:"Standard - Personal",4:"Free",None:None}

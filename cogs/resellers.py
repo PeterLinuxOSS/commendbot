@@ -11,9 +11,9 @@ from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
 import config
-from cogs.helpers import *
-from utils import *
 
+# (nothing needed from cogs.helpers)
+from utils import convert_lang, db, favoriteguildsdb, vps_value
 
 # Removed on publication: a pair of unused helpers that validated Discord user
 # tokens by shelling out to a Node script outside this repo, with a real token

@@ -81,6 +81,8 @@ def validate() -> None:
 BRAND_NAME = _str("BRAND_NAME", "CommendBot")
 BRAND_URL = _str("BRAND_URL", "https://example.com")
 BRAND_DISCORD_URL = _str("BRAND_DISCORD_URL", "https://example.com/discord")
+# Direct invite handed to blacklisted users so they can appeal.
+SUPPORT_SERVER_INVITE = _str("SUPPORT_SERVER_INVITE", BRAND_DISCORD_URL)
 BRAND_RULES_URL = _str("BRAND_RULES_URL", "https://example.com/rules")
 BRAND_LOGO_URL = _str("BRAND_LOGO_URL", "")
 BRAND_FOOTER_IMAGE = _str("BRAND_FOOTER_IMAGE", "")

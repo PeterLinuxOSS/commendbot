@@ -17,10 +17,26 @@ from nextcord.ext.commands import Bot
 from nextcord.utils import get
 
 import config
-from cogs.commend import *
+from cogs.commend import commend, helpers
 from cogs.commend_menu import closebutton, commend_menu
+from cogs.helpers import address_button
 from cogs.resellers import resellers
-from utils import *
+from utils import (
+    OWNERID,
+    admins,
+    bluepr,
+    can_dm_user,
+    cprint,
+    db,
+    get_datetime_utc,
+    html_notify,
+    logger,
+    smtp,
+    support_server_link,
+    timestamp,
+    tz,
+    tzsk,
+)
 
 
 class taskss(commands.Cog):
@@ -38,19 +54,13 @@ class taskss(commands.Cog):
                     if bo_role and bo_role not in member.roles:
                         await member.add_roles(bo_role, reason="He is customer")
                         await asyncio.sleep(1)
-                        
-        
         for member in self.bot.support_guild.members:
             if baldb:=await db.balancesdb.find_one({"userid":member.id}):
-                
-                
-                
                 if self.bot.customer_role and self.bot.customer_role not in member.roles:
                     await member.add_roles(self.bot.customer_role, reason="He is customer")
                     await asyncio.sleep(0.2)
                 if self.bot.trusted_role and self.bot.trusted_role not in member.roles:
                     if baldb.get("lastid") == OWNERID and baldb.get("guildid") == self.bot.support_guild.id:
-                    
                         await member.add_roles(self.bot.trusted_role, reason="Trusted customer")
 
                         cprint("is loyal")
@@ -190,10 +200,6 @@ class taskss(commands.Cog):
     async def on_ready(self):
         while not self.bot.slottrans_ready :
             await asyncio.sleep(2)
-            
-        
-        
-        
         cprint("Starting bot_tasks", "yellow")
 
         # Prepare Message
@@ -204,17 +210,11 @@ class taskss(commands.Cog):
         if not taskss.subcheck.is_running():
             taskss.subcheck.start(self)
 
-        
 
         if not taskss.autostart.is_running():
             taskss.autostart.start(self)
         if not taskss.roleaddjob.is_running():
             taskss.roleaddjob.start(self)
-            
-            
-        
-            
-            
         if not taskss.change_status.is_running():
             taskss.change_status.start(self)
 
@@ -224,7 +224,6 @@ class taskss(commands.Cog):
     async def roleaddjob(self):
         datetime_utc = get_datetime_utc()
         print("roleaddjob running")
-        
         await taskss.auto_close_check(self)
         await taskss.refresh_customers(self)
         logchannel = self.bot.get_channel(config.TRANSACTION_LOG_CHANNEL_ID)
@@ -503,8 +502,6 @@ class taskss(commands.Cog):
 
                                 member = channel.guild.get_member(
                                     channeldata["userid"])
-                                
-                                    
                                 mention_check = guild[0].get(
                                     "autodelete_mention", 1)
                                 if  not  member:
@@ -518,7 +515,6 @@ class taskss(commands.Cog):
 
                                 tim2 = datetime.datetime.now(
                                     tz=tz)+datetime.timedelta(hours=12)
-                                
                                 if member:
                                     await db.timedb.insert_one({"userid": member.id, "channelid": channel_id, "error_channelid": channel.threads[0].id, "guildid": channel.guild.id, "datetime": tim2})
                                     datetimes = datetime.datetime.now(
@@ -568,11 +564,9 @@ class taskss(commands.Cog):
         print("autoreport running")
         datetime_utc = get_datetime_utc()
 
-        
 
         allusersons = db.serverusers.find({})
 
-        
 
         async for userons in allusersons:
             if userons["status"] == "confirmed":
@@ -640,11 +634,9 @@ class taskss(commands.Cog):
     async def change_status(self):
 
         await self.bot.wait_until_ready()
-        
         datetime_utc = get_datetime_utc()
         await db.bot.update_one({"_id": 0}, {'$set': {'activity': datetime_utc}, '$inc': {'uptime': 1}})
 
-        
         activity = next(self.bot.statuses)
 
         if "Commending" in activity:
@@ -680,9 +672,7 @@ class taskss(commands.Cog):
     async def autostart(self):
         print("autostart running")
         datetime_utc = get_datetime_utc()
-        
 
-        
 
         start = await db.waitinglist.find_one({"type": "start", "status": "go"})
         if start is None:

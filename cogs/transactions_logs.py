@@ -8,9 +8,21 @@ from nextcord import Colour, Interaction, User
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+# (nothing needed from cogs.commend)
+from cogs.helpers import helpers
+from utils import (
+    can_dm_user,
+    create_bal,
+    db,
+    embed_error,
+    embed_success,
+    is_reseller,
+    is_slot_admin,
+    prettify,
+    sview,
+    timestamp,
+    tz,
+)
 
 
 class properties(nextcord.ui.Select):

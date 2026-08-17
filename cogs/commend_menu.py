@@ -11,17 +11,19 @@ import calendar
 import datetime
 import io
 import random
+import re
 
+import asyncstdlib as a
 import chat_exporter
 import nextcord
 import pymongo.collection
-from nextcord import Colour, Embed, Interaction, TextChannel, User
+from nextcord import Colour, Embed, Guild, Interaction, TextChannel, User
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 from steam_web_api import Steam
 
 import config
-from cogs.commend import *
+from cogs.commend import Confirm, commend
 from cogs.commend_menu_lifecycle import MenuLifecycleCommands
 
 # Re-exported for the rest of the codebase, which imports the views from here.
@@ -42,14 +44,28 @@ from cogs.commend_menu_views import (  # noqa: F401
     start_commend,
 )
 from cogs.helpers import helpers
-from utils import *
+from utils import (
+    bluepr,
+    cprint,
+    db,
+    delete_autodelete,
+    get_lang,
+    logger,
+    logo,
+    millify,
+    prettify,
+    pview,
+    sview,
+    timestamp,
+    tz,
+    tzsk,
+)
 
 steam = Steam(config.STEAM_API_KEY)
 
 
 
 
-            
 
 
 
@@ -420,9 +436,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
                         value=error_logs.mention, inline=False)
 
         return embed, menu_View(self.bot)
-    
-    
-    
     async def addtoblacklist(self,sendas:TextChannel,member:User,bannedby:User,guild:Guild,reason,steal=False):
         commenddb = await db.ticketsdb.find_one({"userid": member.id})
         if commenddb:
@@ -463,8 +476,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
                 else:
                     await db.balancesdb.insert_one({"userid": bannedby.id, "guildid": guild.id, "lastid": self.bot.user.id, "amount": bal["amount"], "slot_id": bal["slot_id"], "today_used": 0, "onhold": 0, "active": True})
                     await db.balancesdb.delete_one({"userid": member.id, "slot_id": bal["slot_id"]})
-    
-    
 
     async def close_ticket(self, channel: TextChannel, sendas: Interaction | TextChannel, ticketsdb: dict = None, reason: str = "Close-ticket", agressive: bool = False, edit_message=False):
         if not channel:
@@ -494,7 +505,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
                 if not ticketsdb:
                     if isinstance(channel,nextcord.Thread):
                         channel = channel.parent
-                    
                     ticketsdb = await db.ticketsdb.find_one({"channelid": channel.id})
                 if ticketsdb:
                     if edit_message:
@@ -562,11 +572,9 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
         return stopped
 
     async def stop_waiting(self, userons, reason, slotcurr: int = None, rr=None):
-        
         if not userons:
             cprint("non userons ", "red")
             return
-        
         slotcurrency = userons["amount"]
         await db.balancesdb.update_one({"userid":userons["userid"]},{"$inc": {"onhold": -slotcurrency,"amount":+slotcurrency}})
         if "channelid" in userons:
@@ -579,7 +587,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
                 embed.add_field(name="Reason", value=reason, inline=True)
                 count = await db.serverusers.count_documents({"channelid": channel.id})
                 await channel.threads[0].send(embed=embed, delete_after=60)
-                
                 if count == 0:
                     ticketdb = await db.ticketsdb.find_one({"channelid": channel.id})
                     if ticketdb:
@@ -599,7 +606,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
                         logger.error(f"For channel {channel.id} cannot find ticketsdb is None(stop_waiting)")
             else:
                 logger.error(f"CHannel is not defined {userons}")
-        
         else:
             await db.serverusers.update_one({"_id": userons["_id"]}, {"$set": {"status": "error", "reason": reason}})
 
@@ -612,8 +618,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
 
         await db.waitinglist.delete_many({"steamID64": userons["steamID64"]})
         await db.slottrans.delete_many({"steamID64": userons["steamID64"]})
-        
-        
 
 
 
@@ -622,10 +626,6 @@ class commend_menu(MenuLifecycleCommands, commands.Cog):
 
 
 
-        
-    
-    
-    
 
 
 

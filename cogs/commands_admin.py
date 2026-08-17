@@ -12,10 +12,21 @@ from nextcord.utils import get
 from steam import steamid
 
 import config
-from cogs.commend import *
+import utils.translates as translates
 from cogs.commend_menu import commend_menu
-from cogs.helpers import *
-from utils import *
+
+# (nothing needed from cogs.commend)
+# (nothing needed from cogs.helpers)
+from utils import (
+    TESTING_GUILD_ID,
+    admins,
+    can_dm_user,
+    db,
+    embed_error,
+    logger,
+    timestamp,
+    tz,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 

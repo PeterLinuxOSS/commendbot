@@ -12,12 +12,24 @@ from nextcord.utils import get
 from termcolor import colored
 
 import config
-from cogs.bot_tasks import *
-from cogs.commend import *
+from cogs.bot_tasks import commend_menu
+from cogs.commend import commend
 from cogs.commend_menu import commendbotbutton
-from cogs.helpers import *
+from cogs.helpers import helpers
 from cogs.slottrans import slottrans
-from utils import *
+from utils import (
+    bluepr,
+    can_dm_user,
+    convert_lang,
+    cprint,
+    db,
+    extract_information,
+    get_datetime_utc,
+    logger,
+    timestamp,
+    tz,
+    user_template,
+)
 
 print("start events")
 
@@ -348,7 +360,6 @@ class events(commands.Cog):
             
         else:
             
-            tim2= nextcord.utils.utcnow()
             inviter = db.invitepool.find({}).sort("_id",pymongo.DESCENDING)
             member = None
             async for invite in inviter:
@@ -364,7 +375,7 @@ class events(commands.Cog):
             
             
             
-            await db.subdb.insert_one({"guildid":guild.id, "datetime":tim2, "slotcount":1, "disabled":False, "ownerid":member.id, "subtype":2 if docs <=1 else 4,"pay":True if docs <=1 else False,"datetime":(datetime.datetime.now(tz=tz)+datetime.timedelta(days=30))})
+            await db.subdb.insert_one({"guildid":guild.id, "slotcount":1, "disabled":False, "ownerid":member.id, "subtype":2 if docs <=1 else 4,"pay":True if docs <=1 else False,"datetime":(datetime.datetime.now(tz=tz)+datetime.timedelta(days=30))})
             gstt ={"guildid":guild.id,"ownerid":member.id,"setupbot":bool(False),  "autodelete": bool(True), "logonoff":bool(False), "supportroleid":role.id,"public":True,}
             await db.guildsetting.insert_one(gstt)
             db_list = user_template(member,False,0,True if docs <=1 else False,"eng")

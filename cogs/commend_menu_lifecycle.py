@@ -4,15 +4,36 @@ import calendar
 import datetime
 import random
 
+import asyncstdlib as a
 import nextcord
 import pymongo.collection
 from nextcord import Colour, TextChannel
 from steam_web_api import Steam
 
 import config
-from cogs.commend import *
+from cogs.commend import Confirm
+from cogs.commend_menu_views import (
+    Select_StopCommending,
+    balance_menu,
+    language_header,
+    start_commend,
+)
 from cogs.helpers import helpers
-from utils import *
+from utils import (
+    best_server,
+    cprint,
+    db,
+    embed_error,
+    get_datetime_utc,
+    get_lang,
+    howitworksemb,
+    logger,
+    logo,
+    pview,
+    support_server_link,
+    sview,
+    tz,
+)
 
 steam = Steam(config.STEAM_API_KEY)
 
@@ -139,7 +160,7 @@ class MenuLifecycleCommands:
                                                                     embed.title = f"Session - {steamID64} "
                                                                     msg : nextcord.Message=await editmsg(embed=embed, view=view)
                                                                     await db.balancesdb.update_one({"userid":interaction.user.id},{"$inc": {"onhold": +amount,"amount":-amount}})
-                                                                    await db.serverusers.insert_one({"userid":interaction.user.id, "channelid":interaction.channel.id, "amount": amount, "actualamount":0,"steamID64": steamID64, "status":"w8connect", "pendingmany":0, "commended":False,"lastup":datetime_utc, "guildsid": interaction.guild_id, "msgid":msg.id, "slot_id":slotid, "howitworkis-button":lang["howitworkis-button"],"button":True, "chunk":"#0","chunk-info":"[0/0]","actualamount":0, "lastpending":0,"auto":False,"old_balance":oldamount})
+                                                                    await db.serverusers.insert_one({"userid":interaction.user.id, "channelid":interaction.channel.id, "amount": amount, "steamID64": steamID64, "status":"w8connect", "pendingmany":0, "commended":False,"lastup":datetime_utc, "guildsid": interaction.guild_id, "msgid":msg.id, "slot_id":slotid, "howitworkis-button":lang["howitworkis-button"],"button":True, "chunk":"#0","chunk-info":"[0/0]","actualamount":0, "lastpending":0,"auto":False,"old_balance":oldamount})
                                                                     return   
                                                                     
                                                                     

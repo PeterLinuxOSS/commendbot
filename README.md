@@ -83,12 +83,9 @@ source string, that is why — check what it renders as, not what it says.
 This is 2020s-era hobby code that grew under a live service. It is published
 honestly, not polished into something it never was.
 
-- **Star imports everywhere.** `from utils import *` and `from cogs.helpers import *`
-  are load-bearing; several modules rely on names re-exported through them. Ruff
-  reports ~1300 `F405`s and they are all real. Untangling this is the obvious
-  next refactor and it is not a small one.
-- **Nothing is tested.** There is no test suite, and the bot cannot be exercised
-  without a Discord token, a MongoDB instance and the slot workers.
+- **Nothing is tested.** There is no test suite. The helpers, embed builders,
+  mail templates and DB lookups have been exercised by hand against a local
+  MongoDB, but nothing is automated and the Discord-facing paths are unproven.
 - **The e-mail templates hotlink Discord CDN attachments** that have long since
   expired. Re-host the images and repoint `config.IMAGE_*`.
 - **Error handling is broad.** Bare `except:` blocks were narrowed to
@@ -110,6 +107,10 @@ notable differences from the code that ran in production:
   and after: 18 cogs, 56 application commands.
 - ~650 unused imports, ~200 lines of commented-out code and several dead
   functions removed.
+- **Star imports untangled.** Every `from X import *` outside `utils/__init__.py`
+  was replaced with an explicit import list, resolved by importing each module
+  and inspecting the real namespaces rather than guessing. Ruff went from 1287
+  `F405`s (and `F821` being useless) to zero of both.
 
 Bugs found and fixed on the way through:
 
@@ -127,6 +128,20 @@ Bugs found and fixed on the way through:
   depended on which module Python happened to load first.
 - Missing translation keys called `os._exit(3)` at import time; they are now
   reported by `check_translations()` and fall back to English.
+- `json` was never imported in `settings.py` or `slottrans.py` — it only ever
+  resolved because `cogs/helpers.py` happened to re-export it through a star
+  import. `json.loads()` in the slot-worker oplog watcher was one bad path away
+  from a `NameError`.
+- A new reseller subscription was inserted with `"datetime"` twice: the creation
+  time and the expiry. The later key won, so the intended value was silently
+  discarded — had the order been the other way round, every subscription would
+  have expired the moment it was created.
+
+Verification used throughout: load all cogs into a real `nextcord` Bot and diff
+the registered command surface (18 cogs / 56 commands) after every change, then
+drive the helpers against a local MongoDB. Both caught regressions that
+importing the modules did not — a missing name in a rarely-taken branch does not
+fail until that branch runs.
 
 ## License
 

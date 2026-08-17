@@ -8,9 +8,10 @@ from nextcord.utils import get
 
 import config
 from cogs.commend_menu import commendbotbutton
-from cogs.helpers import *
 from cogs.settings import settings
-from utils import *
+
+# (nothing needed from cogs.helpers)
+from utils import bluepr, build_embed, convert_lang, db, embed_error, get_lang, sview
 
 
 class deflanguage_auto(nextcord.ui.Select):

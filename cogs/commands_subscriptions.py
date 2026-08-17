@@ -11,9 +11,19 @@ import pymongo
 from dateutil.relativedelta import relativedelta
 from nextcord import Colour, Embed, Interaction, SlashOption, User
 
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+# (nothing needed from cogs.commend)
+# (nothing needed from cogs.helpers)
+from utils import (
+    OWNERID,
+    admins,
+    can_dm_user,
+    db,
+    get_user_avatar,
+    sub_types,
+    subdecoder,
+    timestamp,
+    tz,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 

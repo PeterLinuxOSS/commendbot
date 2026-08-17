@@ -1,9 +1,9 @@
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+# (nothing needed from cogs.commend)
+# (nothing needed from cogs.helpers)
+# (nothing needed from utils)
 
 
 class UI(commands.Cog):

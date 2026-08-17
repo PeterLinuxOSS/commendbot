@@ -1,8 +1,11 @@
 import datetime
+import math
+import re
 import typing
 from email.mime.multipart import MIMEMultipart
 from email.mime.text import MIMEText
 
+import aiosmtplib
 import nextcord
 from bson import ObjectId
 from disposable_email_domains import blocklist
@@ -14,7 +17,25 @@ from random_object_id import generate
 from termcolor import cprint
 
 import config
-from utils import *
+from utils import (
+    bluepr,
+    can_dm_user,
+    db,
+    embed_error,
+    favoriteguilds,
+    feescalc,
+    get_datetime_utc,
+    get_rules,
+    html_verify,
+    is_number,
+    logger,
+    logo,
+    mail_regex,
+    server_name,
+    smtp,
+    timestamp,
+    user_template,
+)
 
 
 class Add_mail(nextcord.ui.Modal):

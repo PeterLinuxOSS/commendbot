@@ -14,9 +14,22 @@ from matplotlib import pyplot as plt
 from nextcord import Colour, Embed, Interaction, Member, SlashOption, User
 
 import config
-from cogs.commend import *
-from cogs.helpers import *
-from utils import *
+from cogs.commands_views import profile, showslotsgraphs
+
+# (nothing needed from cogs.commend)
+# (nothing needed from cogs.helpers)
+from utils import (
+    admins,
+    db,
+    delete_autodelete,
+    get_user_avatar,
+    logger,
+    millify,
+    prettify,
+    sview,
+    timestamp,
+    tz,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 

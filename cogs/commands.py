@@ -6,11 +6,17 @@ registers exactly as if it were written here.
 """
 
 import datetime
+import re
+from email.mime.multipart import MIMEMultipart
+from email.mime.text import MIMEText
 
+import aiosmtplib
 import asyncstdlib as a
 import cooldowns
 import nextcord
-from nextcord import ChannelType, Colour, Embed, Interaction, Member, SlashOption, User
+from disposable_email_domains import blocklist
+from key_generator.key_generator import generate as generate_id
+from nextcord import ChannelType, Color, Colour, Embed, Interaction, Member, SlashOption, User
 from nextcord.ext import commands
 from nextcord.ext.commands import Bot
 from numpy.random import choice
@@ -26,10 +32,30 @@ from cogs.commands_views import (
     Spin_wheel,
     wheel_spin_select,
 )
-from cogs.commend import *
+from cogs.commend import commend, language
 from cogs.commend_menu import closebutton, commend_menu, promo_view
-from cogs.helpers import *
-from utils import *
+from cogs.helpers import address_button, helpers, re_address_button
+from utils import (
+    TESTING_GUILD_ID,
+    admins,
+    can_dm_user,
+    convert_lang,
+    db,
+    embed_error,
+    find_command,
+    find_wallets,
+    get_lang,
+    get_rules,
+    html_recovery,
+    logger,
+    mail_regex,
+    promotion_embed,
+    smtp,
+    sview,
+    timestamp,
+    tz,
+    user_template,
+)
 
 script_top = datetime.datetime.now(tz=tz)
 
