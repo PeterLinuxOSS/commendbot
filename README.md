@@ -41,19 +41,52 @@ Responsibilities of the bot:
 
 ## Architecture
 
-```
- Customer ──▶ Discord ──▶ CommendBot ──▶ MongoDB ◀──▶ Slot workers
-                             │                          (separate repo,
-                             │                           isolated hosts)
-                             ├─ balances, wallets, tickets
-                             ├─ purchases, keys, payouts
-                             └─ reseller subscriptions & billing
+The two halves of the system never call each other. MongoDB is the entire
+interface between them: each side writes documents and watches change streams
+for the other's, which is why a replica set is a hard requirement.
+
+```mermaid
+sequenceDiagram
+    autonumber
+    actor C as Customer
+    participant B as CommendBot<br/>(this repo)
+    participant DB as MongoDB<br/>replica set
+    participant W as Slot worker<br/>(commendbot-slots)
+    participant G as In-game<br/>commend bot
+
+    C->>B: starts a session in their ticket
+    B->>B: reserve balance
+    B->>DB: insert into waitinglist
+    DB-->>W: change stream
+    W->>DB: claim the slot
+    W->>G: ~commend steamID amount
+
+    loop every chunk
+        G-->>W: progress message
+        W->>DB: typed event into slottrans
+        DB-->>B: change stream
+        B->>C: update ticket embed
+    end
+
+    G-->>W: commend done
+    W->>DB: final event
+    DB-->>B: change stream
+    B->>C: session complete, balance settled
 ```
 
-The bot writes commend requests to the `waitinglist` / `slottrans` collections;
-workers consume them, drive the commend process, and write status events back.
-`cogs/slottrans.py` watches those collections with MongoDB **change streams** and
-updates the customer's ticket in real time.
+Neither side has a retry channel to the other, so a worker that dies mid-session
+leaves the request claimed and the balance reserved; `cogs/bot_tasks.py` sweeps
+for those and returns unused commends. Progress arrives in chunks rather than
+per-commend, which is why the ticket embed updates every few minutes rather than
+continuously.
+
+| Collection | Written by | Purpose |
+| --- | --- | --- |
+| `waitinglist` | bot | Queued commend requests awaiting a free slot |
+| `slottrans` | both | Commands out, status events back |
+| `commendbotstatus` | both | Slot registry: tokens, capacity, daily limits |
+| `serverusers` | bot | Live sessions and their progress |
+| `balancesdb` | bot | Per-customer, per-slot wallets |
 
 ## Commands
 
