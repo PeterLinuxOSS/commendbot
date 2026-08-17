@@ -166,17 +166,21 @@ Two scripts under `tools/` validate the bot without a full deployment:
 The business launched in November 2019 and the bot began in 2020 as a fork of an
 open-source CS:GO commend bot, rewritten and extended over the following years:
 
-| Period | Milestone |
+| Date | Milestone |
 | --- | --- |
 | Nov 2019 | Service launched |
 | 2020 | Bot built on a fork of an open-source commend bot |
+| Apr 2021 | Current Discord guild created |
+| Oct 2021 | Guild officially reopened after a redesign |
+| Jan 2022 | 300 members, 69 customers (first recorded snapshot) |
 | 2022 | Rewrite; localisation and the reseller model introduced |
 | 2023 | Standalone control panel; email and recovery flows |
 | 2024 | v7.0.0 — final production version (this archive) |
-| Jan 2025 | Service discontinued |
+| Jan 2025 | CommendBot discontinued |
+| Dec 2025 | Business and Discord server closed |
 
-At retirement the support guild had ~800 members. The bot ran on `nextcord` with
-MongoDB (Motor) and was deployed under PM2.
+The guild reached 794 members by the time of this archive. The bot ran on
+`nextcord` with MongoDB (Motor) and was deployed under PM2.
 
 ## License
 
