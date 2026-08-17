@@ -1,0 +1,27 @@
+# Pinned to the versions the bot was last verified against (Python 3.11).
+aiocron==1.8
+aiosmtplib==3.0.1
+asyncstdlib==3.10.9
+chat_exporter==2.6.1
+disposable_email_domains==0.0.95
+function_cooldowns==2.0.1
+humanfriendly==10.0
+key_generator==1.0.3
+matplotlib==3.8.2
+motor==3.4.0
+nextcord==2.6.0
+NextcordUtils==1.0
+numpy==1.26.2
+paramiko==3.3.1
+psutil==5.9.6
+pymongo==4.6.1
+python-a2s==1.3.0
+python-dateutil==2.8.2
+python-dotenv==1.0.1
+python-steam-api==2.0.2
+pytz==2023.3.post1
+random_object_id==2.0.0
+requests==2.34.2
+steam==1.4.4
+termcolor==2.4.0
+typing_extensions==4.15.0

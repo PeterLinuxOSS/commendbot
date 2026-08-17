@@ -1,0 +1,25 @@
+# secrets
+.env
+bot_config/
+*.pem
+*.key
+
+# runtime
+logs/
+src/video/
+*.log
+
+# python
+__pycache__/
+*.py[cod]
+.venv/
+venv/
+.pytest_cache/
+.ruff_cache/
+
+# editors / os
+.vscode/
+.idea/
+desktop.ini
+.DS_Store
+Thumbs.db
