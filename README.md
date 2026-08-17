@@ -29,6 +29,11 @@ automates a Discord user account, which violates Discord's Terms of Service;
 that repository documents this plainly and is published for reference, not as
 an invitation to run it.
 
+A separate storefront bot,
+[ShopManager](https://github.com/PeterLinuxOSS/shopmanager), ran alongside
+CommendBot and could sell commends against a customer's CommendBot balance —
+it reads `balancesdb` and `blacklistdb` from this deployment's MongoDB cluster.
+
 Responsibilities of the bot:
 
 - Customer accounts, balances, and per-slot wallets
