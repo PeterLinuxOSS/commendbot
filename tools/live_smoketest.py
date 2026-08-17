@@ -12,7 +12,12 @@ What is deliberately defused:
   bot is still in. All four rollout flags are turned off here.
 * **Local database.** MONGODB_URI points at a throwaway local mongod, so
   on_ready reads an empty database: no customer DMs, no message edits in real
-  guilds, no writes to production data.
+  guilds, no writes to production data. It must be a single-node **replica
+  set**, because cogs/slottrans.py watches the database with change streams,
+  which MongoDB refuses to open on a standalone server:
+
+      mongod --dbpath /tmp/cb-mongo --replSet rs0 --fork --logpath /tmp/cb-mongo.log
+      mongosh --eval 'rs.initiate({_id:"rs0", members:[{_id:0, host:"127.0.0.1:27017"}]})'
 * **Bounded.** Disconnects after TIMEOUT seconds no matter what.
 * **Read-only presence.** The bot will appear online for that window. That is
   the one visible effect and it cannot be avoided while still testing login.
@@ -34,7 +39,7 @@ from pathlib import Path
 
 TIMEOUT = 90                     # seconds before we disconnect regardless
 SECRETS = Path("/root/commendbot/bot_config/secrets.json")
-LOCAL_MONGO = "mongodb://127.0.0.1:27017"
+LOCAL_MONGO = "mongodb://127.0.0.1:27017/?directConnection=true"
 
 os.environ["MONGODB_URI"] = LOCAL_MONGO          # never the production cluster
 os.environ.setdefault("STEAM_API_KEY", "dummy")
@@ -63,6 +68,21 @@ bot._rollout_register_new = False
 bot._rollout_update_known = False
 
 report = {"login": False, "ready": False, "guilds": [], "errors": []}
+
+
+async def require_replica_set():
+    """Fail loudly rather than let the slot watchers die quietly."""
+    from utils import db
+    try:
+        status = await db.client.admin.command("replSetGetStatus")
+    except Exception as exc:
+        sys.exit(
+            f"local mongod is not a replica set ({exc}).\n"
+            "cogs/slottrans.py needs change streams; start it with --replSet rs0 "
+            "and run rs.initiate() - see this file's docstring."
+        )
+    log.info("mongo replica set %r, state %s",
+             status["set"], status["members"][0]["stateStr"])
 
 
 async def seed_minimum():
@@ -102,6 +122,7 @@ async def on_ready():
 
 
 async def run():
+    await require_replica_set()
     await seed_minimum()
     botmain.load_extensions()
     log.info("loaded %d cogs, %d application commands",

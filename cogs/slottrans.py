@@ -38,50 +38,59 @@ class slottrans(commands.Cog):
         
         
         self.loop = asyncio.get_event_loop()
-        self.task = self.loop.create_task(self.watch_mongodb())
-        self.task = self.loop.create_task(self.watch_usersdb())
-        
+        # Both handles are kept: assigning them to the same attribute dropped
+        # the reference to the first, so if it raised, the exception was never
+        # retrieved and the watcher died silently.
+        self.tasks = [
+            self.loop.create_task(self.watch_mongodb()),
+            self.loop.create_task(self.watch_usersdb()),
+        ]
+
+    def cog_unload(self):
+        for task in getattr(self, "tasks", ()):
+            task.cancel()
+
     async def watch_usersdb(self):
-        while not self.bot.slottrans_ready :
-            await asyncio.sleep(0)
-            
-        
-        
-      
+        while not self.bot.slottrans_ready:
+            await asyncio.sleep(1)
+
         cprint("watch_usersdb is started!")
-        # Process the changes in the main thread
-        async with self.loop.run_in_executor(None, db.users_database.watch) as changes:
-            async for change in changes:
-                db_name = change["ns"]["coll"]
-                if db_name == "balancesdb":
-                    if change["operationType"] == "update":
-                        amount =  change['updateDescription']['updatedFields'].get("amount")
-                        if amount:
-                            object_id = change['documentKey']['_id']
-                            
-                            baldb = await db.balancesdb.find_one({"_id":object_id})
-                            
-                            ticket = await db.ticketsdb.find_one({"userid":baldb["userid"]})
-                            if ticket:
-                                
-                                count:int = await db.serverusers.count_documents({"userid":baldb["userid"]})
-                                if count == 0:
-                                    
-                                    channel = self.bot.get_channel(ticket.get("channelid"))
-                                    if channel:
-                                        
-                                        msg = await channel.fetch_message(ticket.get("msgid"))
-                                        if msg:
-                                            
-                                            embed = msg.embeds[0]
-                                            embed.timestamp = datetime.datetime.now()
-                                            embed.set_field_at(0,value=amount,name=embed.fields[0].name,inline=False)
-                                            
-                                            await msg.edit(embed=embed)
-                                        
-                                        
+        # run_in_executor returns a Future, which is not an async context
+        # manager - `async with` on it raised TypeError the moment this task
+        # started, so this watcher never actually ran. Await it the same way
+        # watch_mongodb does.
+        changes = await self.loop.run_in_executor(None, db.users_database.watch)
+        async for change in changes:
+            db_name = change["ns"]["coll"]
+            if db_name == "balancesdb":
+                if change["operationType"] == "update":
+                    amount =  change['updateDescription']['updatedFields'].get("amount")
+                    if amount:
+                        object_id = change['documentKey']['_id']
                         
+                        baldb = await db.balancesdb.find_one({"_id":object_id})
+                        
+                        ticket = await db.ticketsdb.find_one({"userid":baldb["userid"]})
+                        if ticket:
+                            
+                            count:int = await db.serverusers.count_documents({"userid":baldb["userid"]})
+                            if count == 0:
+                                
+                                channel = self.bot.get_channel(ticket.get("channelid"))
+                                if channel:
+                                    
+                                    msg = await channel.fetch_message(ticket.get("msgid"))
+                                    if msg:
+                                        
+                                        embed = msg.embeds[0]
+                                        embed.timestamp = datetime.datetime.now()
+                                        embed.set_field_at(0,value=amount,name=embed.fields[0].name,inline=False)
+                                        
+                                        await msg.edit(embed=embed)
+                                    
+                                    
                     
+                
         
         
     async def watch_mongodb(self):

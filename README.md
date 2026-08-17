@@ -52,7 +52,19 @@ into everything that imports it.
 
 ## Running it
 
-Requires Python 3.11 and a MongoDB instance.
+Requires Python 3.11 and a MongoDB **replica set** — not a standalone server.
+`cogs/slottrans.py` watches the database with change streams
+(`db.servers.watch()`, `db.users_database.watch()`), which MongoDB only
+supports on a replica set, and `utils/mongodb.py` reads `local.oplog.rs`. On a
+standalone `mongod` both watchers die on startup and the bot never learns
+anything from the slot workers. A single-node replica set is enough:
+
+```bash
+mongod --dbpath /var/lib/mongo --replSet rs0
+mongosh --eval 'rs.initiate({_id:"rs0", members:[{_id:0, host:"127.0.0.1:27017"}]})'
+```
+
+Then:
 
 ```bash
 pip install -r requirements.txt
@@ -83,9 +95,11 @@ source string, that is why — check what it renders as, not what it says.
 This is 2020s-era hobby code that grew under a live service. It is published
 honestly, not polished into something it never was.
 
-- **Nothing is tested.** There is no test suite. The helpers, embed builders,
-  mail templates and DB lookups have been exercised by hand against a local
-  MongoDB, but nothing is automated and the Discord-facing paths are unproven.
+- **Almost nothing is tested.** `tools/test_change_streams.py` covers the slot
+  watchers, and `tools/live_smoketest.py` will connect to Discord once with its
+  side effects defused. Beyond that there is no suite: the helpers, embed
+  builders and mail templates have been exercised by hand, and most of the
+  Discord-facing surface is unproven.
 - **The e-mail templates hotlink Discord CDN attachments** that have long since
   expired. Re-host the images and repoint `config.IMAGE_*`.
 - **Error handling is broad.** Bare `except:` blocks were narrowed to
@@ -136,6 +150,13 @@ Bugs found and fixed on the way through:
   time and the expiry. The later key won, so the intended value was silently
   discarded — had the order been the other way round, every subscription would
   have expired the moment it was created.
+- **`watch_usersdb()` never ran.** It opened its change stream with
+  `async with self.loop.run_in_executor(...)`, and a Future is not an async
+  context manager, so the task raised `TypeError` the instant it started. Both
+  watcher tasks were also assigned to the same `self.task` attribute, dropping
+  the reference to the first — so the exception was never retrieved and the
+  failure was completely silent. The live balance-update on a customer's open
+  ticket has therefore never worked.
 
 Verification used throughout: load all cogs into a real `nextcord` Bot and diff
 the registered command surface (18 cogs / 56 commands) after every change, then
