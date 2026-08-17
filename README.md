@@ -92,25 +92,6 @@ From the original operator documentation and the live service:
   balance.
 - The server ran anti-AFK, so customers could remain connected without being kicked.
 
-### Pricing (as advertised)
-
-Retail, pay-as-you-go:
-
-| Price | Commends | | Price | Commends |
-| --- | --- | --- | --- | --- |
-| €1 | 100 | | €10 | 1,333 |
-| €2 | 200 | | €15 | 2,000 |
-| €3 | 350 | | €20 | 3,000 |
-| €6 | 800 | | boost | 200 per server boost |
-
-Reseller subscriptions (per month):
-
-| Plan | Commends | Price |
-| --- | --- | --- |
-| Standard — Personal | 1,500 | €15 |
-| Standard — Server | 6,000 | €25 |
-| Premium | 12,000 | €45 |
-
 ## Project layout
 
 | Path | Contents |
@@ -196,32 +177,6 @@ open-source CS:GO commend bot, rewritten and extended over the following years:
 
 At retirement the support guild had ~800 members. The bot ran on `nextcord` with
 MongoDB (Motor) and was deployed under PM2.
-
-## Changelog for this release
-
-Prepared from the last production version:
-
-- Credentials removed and loaded from `.env`; all rotated. Branding, staff
-  identities, and ~70 hardcoded Discord IDs moved into `config.py`.
-- `commands.py` (3,031 lines) and `commend_menu.py` (1,834 lines) split into
-  thematic mixin and view modules. The registered command surface is unchanged:
-  18 cogs, 56 commands.
-- Star imports replaced with explicit imports throughout; unused imports,
-  commented-out code, and dead functions removed.
-
-Defects found and fixed while preparing the release:
-
-- `watch_usersdb()` opened its change stream with `async with` on a `Future` and
-  raised `TypeError` on startup; both watcher tasks shared one attribute, so the
-  failure was silent. The live ticket balance refresh had never worked.
-- `banuser` was a global command with no permission check.
-- `/adminbalance` ignored its argument and always reported one fixed account.
-- The daily wheel crashed for customers with more than one wallet.
-- A duplicate key raised `KeyError` in all six translation tables.
-- A new subscription document set its expiry key twice.
-- `json` was unimported in two modules and resolved only via a re-export.
-- `utils.translates` and `utils.variables` imported each other; correctness
-  depended on import order.
 
 ## License
 
