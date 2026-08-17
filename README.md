@@ -1,13 +1,19 @@
+<p align="center">
+  <img src="assets/logo.png" alt="r4p Services" width="140">
+</p>
+
 # CommendBot
 
-A Discord bot that operated a paid CS:GO / CS2 commend service. Customers
-purchased a balance of commends, opened a private ticket, connected to a game
-server, and received commends on their Steam account while the bot tracked
-progress and settled their balance. Resellers could run the service on their
-own Discord guilds under a subscription.
+A Discord bot that operated a paid CS:GO / CS2 commend service under the
+**r4p Services** brand (gameboosting.top). Customers purchased a balance of
+commends, opened a private ticket, connected to a game server, and received
+commends on their Steam account while the bot tracked progress and settled their
+balance. Resellers could run the service on their own Discord guilds under a
+subscription.
 
-The service has been retired. This repository is an archive of the bot, published
-for reference. All credentials have been removed and rotated.
+The service operated from November 2019 to January 2025. This repository is an
+archive of the bot, published for reference. All credentials have been removed
+and rotated.
 
 ## Overview
 
@@ -71,14 +77,34 @@ owner and `ADMIN_IDS`.
 
 ## How the commend flow worked
 
-From the original operator documentation:
+From the original operator documentation and the live service:
 
 - A customer opened a private channel and started a session against a game server.
-- Commends arrived in batches — roughly 20 every five minutes.
+- Commends arrived in batches — roughly 20 every 5–10 minutes, with a daily cap
+  (2,000 per account on the later CS2 service).
 - The game server restarted hourly on the hour; customers had to reconnect within
   ~1 minute 45 seconds or the session paused and unused commends returned to their
   balance.
 - The server ran anti-AFK, so customers could remain connected without being kicked.
+
+### Pricing (as advertised)
+
+Retail, pay-as-you-go:
+
+| Price | Commends | | Price | Commends |
+| --- | --- | --- | --- | --- |
+| €1 | 100 | | €10 | 1,333 |
+| €2 | 200 | | €15 | 2,000 |
+| €3 | 350 | | €20 | 3,000 |
+| €6 | 800 | | boost | 200 per server boost |
+
+Reseller subscriptions (per month):
+
+| Plan | Commends | Price |
+| --- | --- | --- |
+| Standard — Personal | 1,500 | €15 |
+| Standard — Server | 6,000 | €25 |
+| Premium | 12,000 | €45 |
 
 ## Project layout
 
@@ -151,17 +177,20 @@ Two scripts under `tools/` validate the bot without a full deployment:
 
 ## Development history
 
-The service began in 2020 as a fork of an open-source CS:GO commend bot and was
-rewritten and extended over four years:
+The business launched in November 2019 and the bot began in 2020 as a fork of an
+open-source CS:GO commend bot, rewritten and extended over the following years:
 
 | Period | Milestone |
 | --- | --- |
-| 2020 | Initial fork of an open-source commend bot |
-| 2022 | Rewrite; localisation and reseller model introduced |
+| Nov 2019 | Service launched |
+| 2020 | Bot built on a fork of an open-source commend bot |
+| 2022 | Rewrite; localisation and the reseller model introduced |
 | 2023 | Standalone control panel; email and recovery flows |
 | 2024 | v7.0.0 — final production version (this archive) |
+| Jan 2025 | Service discontinued |
 
-The bot ran on `nextcord` with MongoDB (Motor) and was deployed under PM2.
+At retirement the support guild had ~800 members. The bot ran on `nextcord` with
+MongoDB (Motor) and was deployed under PM2.
 
 ## Changelog for this release
 
