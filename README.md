@@ -21,8 +21,13 @@ CommendBot is the **management and commerce layer** of the service. It does not
 deliver commends itself; that was handled by separate worker processes ("slots")
 running on isolated accounts. The bot and the workers communicate exclusively
 through MongoDB collections — the bot records a request, a worker acts on it, and
-the worker writes progress back. The worker component is not part of this
-repository.
+the worker writes progress back.
+
+The worker component is published separately, at
+[commendbot-slots](https://github.com/PeterLinuxOSS/commendbot-slots). It
+automates a Discord user account, which violates Discord's Terms of Service;
+that repository documents this plainly and is published for reference, not as
+an invitation to run it.
 
 Responsibilities of the bot:
 
