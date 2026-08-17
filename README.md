@@ -179,8 +179,21 @@ open-source CS:GO commend bot, rewritten and extended over the following years:
 | Jan 2025 | CommendBot discontinued |
 | Dec 2025 | Business and Discord server closed |
 
-The guild reached 794 members by the time of this archive. The bot ran on
-`nextcord` with MongoDB (Motor) and was deployed under PM2.
+The support guild reached 794 members, but that undercounts actual usage —
+customers also reached the bot through dozens of reseller guilds, and many
+left the support guild once they stopped using the service. Queried directly
+from the production database (aggregate counts only):
+
+| Metric | Value |
+| --- | --- |
+| Registered accounts | 6,164 |
+| Distinct paying customers | 3,703 |
+| Guilds the bot was ever configured on | 83 |
+| Reseller subscriptions issued | 196 |
+| Commends delivered | 1,258,424 (across 25,056 transactions) |
+| Redeem keys generated | 1,301 |
+
+The bot ran on `nextcord` with MongoDB (Motor) and was deployed under PM2.
 
 ## License
 
