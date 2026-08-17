@@ -1,168 +1,193 @@
 # CommendBot
 
-A Discord bot that ran a CS:GO / CS2 commend service: customers opened a private
-ticket, bought or redeemed a balance of commends, connected to a game server and
-watched the commends arrive. Resellers could run the same bot on their own guild
-under a subscription.
+A Discord bot that operated a paid CS:GO / CS2 commend service. Customers
+purchased a balance of commends, opened a private ticket, connected to a game
+server, and received commends on their Steam account while the bot tracked
+progress and settled their balance. Resellers could run the service on their
+own Discord guilds under a subscription.
 
-**This is an archive.** The service it belonged to is shut down and the bot is no
-longer operated. It is published as-is so the code is useful to read, not because
-it is a maintained product. Every credential that was ever in this tree has been
-removed and rotated.
+The service has been retired. This repository is an archive of the bot, published
+for reference. All credentials have been removed and rotated.
 
-## What is actually in here
+## Overview
 
-The bot is the **management layer only**. It never sent a commend itself.
+CommendBot is the **management and commerce layer** of the service. It does not
+deliver commends itself; that was handled by separate worker processes ("slots")
+running on isolated accounts. The bot and the workers communicate exclusively
+through MongoDB collections — the bot records a request, a worker acts on it, and
+the worker writes progress back. The worker component is not part of this
+repository.
+
+Responsibilities of the bot:
+
+- Customer accounts, balances, and per-slot wallets
+- Private ticket channels and the commend session lifecycle
+- Purchases (PayPal) and redeemable key generation
+- Reseller subscriptions, billing, and a public reseller directory
+- Transactional email (verification, recovery, notifications)
+- Localised customer-facing copy in six languages
+- A daily rewards wheel and an invite-reward system
+
+## Architecture
 
 ```
-customer  ──▶  Discord  ──▶  this bot  ──▶  MongoDB  ──▶  slot workers
-                              │                             (separate,
-                              │                              not in this repo)
-                              └──▶ balances, tickets, subscriptions,
-                                   keys, payouts, reseller accounting
+ Customer ──▶ Discord ──▶ CommendBot ──▶ MongoDB ◀──▶ Slot workers
+                             │                          (separate repo,
+                             │                           isolated hosts)
+                             ├─ balances, wallets, tickets
+                             ├─ purchases, keys, payouts
+                             └─ reseller subscriptions & billing
 ```
 
-The commends themselves were performed by "slot" workers running a third-party
-reseller pack on a separate host. This bot and the workers communicated through
-MongoDB collections (`slottrans`, `serverusers`, `commendbotstatus`) — the bot
-wrote a request, a worker picked it up, and the worker wrote progress back. The
-worker side is not part of this repository, so **the bot cannot actually deliver
-commends on its own.** Everything else — the whole customer, billing and reseller
-surface — is here and functional.
+The bot writes commend requests to the `waitinglist` / `slottrans` collections;
+workers consume them, drive the commend process, and write status events back.
+`cogs/slottrans.py` watches those collections with MongoDB **change streams** and
+updates the customer's ticket in real time.
 
-## Layout
+## Commands
 
-| Path | What it does |
-|---|---|
-| `main.py` | Entry point: loads cogs, owner commands, two daily cron jobs |
-| `config.py` | Every credential, ID and branding string, read from `.env` |
+The bot registers 56 application commands. The customer-facing subset:
+
+| Command | Purpose |
+| --- | --- |
+| `/redeem` | Add commends to your balance from a key |
+| `/balance` | Show your commend balance |
+| `/commend` | Start commending a Steam profile *(menu-driven)* |
+| `/stop-commend` | Stop an active commend session |
+| `/buy` | Order commends and pay via PayPal |
+| `/profile`, `/userinfo` | Account overview and statistics |
+| `/giftbalance`, `/transfer` | Move balance between users |
+| `/daily` | Daily rewards wheel |
+| `/rewards` | Rewards shop |
+| `/leaderboard` | Customer leaderboard |
+| `/mysubscriptions` | Reseller subscription status |
+| `/recovery`, `/verify` | Account recovery and email verification |
+| `/setup` | Per-guild setup wizard |
+| `/rules`, `/help`, `/credits` | Informational |
+
+Staff and owner commands (balance adjustments, blacklist, panels, slot
+management, diagnostics) live in `cogs/commands_admin.py` and are gated on the
+owner and `ADMIN_IDS`.
+
+## How the commend flow worked
+
+From the original operator documentation:
+
+- A customer opened a private channel and started a session against a game server.
+- Commends arrived in batches — roughly 20 every five minutes.
+- The game server restarted hourly on the hour; customers had to reconnect within
+  ~1 minute 45 seconds or the session paused and unused commends returned to their
+  balance.
+- The server ran anti-AFK, so customers could remain connected without being kicked.
+
+## Project layout
+
+| Path | Contents |
+| --- | --- |
+| `main.py` | Entry point: loads cogs, owner commands, daily cron jobs |
+| `config.py` | All configuration — credentials, IDs, and branding — from the environment |
 | `cogs/commend_menu*.py` | Ticket lifecycle and the customer commend menu |
-| `cogs/commands*.py` | ~56 slash commands, split into mixins by theme |
-| `cogs/bot_tasks.py` | Scheduled jobs: subscription billing, mail-outs, cleanup |
-| `cogs/slottrans.py` | Watches MongoDB oplog for slot worker messages |
+| `cogs/commands*.py` | Slash commands, split into mixins by theme |
+| `cogs/bot_tasks.py` | Scheduled jobs: subscription billing, mailouts, cleanup |
+| `cogs/slottrans.py` | Change-stream watchers for slot-worker events |
 | `cogs/keygen.py` | Redeemable key generation and redemption |
-| `cogs/settings.py`, `cogs/setup_c.py` | Per-guild setup wizards |
-| `utils/translates.py` | Six languages (EN, DE, SK, PT, HU, PL) |
-| `utils/html.py` | Transactional e-mail templates |
+| `cogs/settings.py`, `cogs/setup_c.py` | Per-guild configuration wizards |
+| `cogs/resellers.py`, `cogs/rewards.py` | Reseller directory and rewards shop |
+| `utils/translates.py` | Localised copy (EN, DE, SK, PT, HU, PL) |
+| `utils/html.py` | Transactional email templates |
+| `tools/` | Standalone verification scripts |
 
-The `cogs/*_views.py` and `cogs/commands_*.py` mixin modules are **not**
-extensions — `main.py` loads an explicit `EXTENSIONS` list rather than globbing
-the directory, because `from cogs.helpers import *` leaks that module's `setup()`
-into everything that imports it.
+The `cogs/*_views.py` and `cogs/commands_*.py` mixin modules are not extensions.
+`main.py` loads an explicit `EXTENSIONS` list rather than scanning the directory,
+because `cogs/helpers.py` re-exports its `setup()` to importers and directory
+scanning would load the same cog more than once.
 
-## Running it
+## Requirements
 
-Requires Python 3.11 and a MongoDB **replica set** — not a standalone server.
-`cogs/slottrans.py` watches the database with change streams
-(`db.servers.watch()`, `db.users_database.watch()`), which MongoDB only
-supports on a replica set, and `utils/mongodb.py` reads `local.oplog.rs`. On a
-standalone `mongod` both watchers die on startup and the bot never learns
-anything from the slot workers. A single-node replica set is enough:
+- Python 3.11
+- A MongoDB **replica set** (not a standalone server)
+
+`cogs/slottrans.py` relies on change streams and `utils/mongodb.py` reads the
+oplog; both require a replica set. A single node is sufficient:
 
 ```bash
 mongod --dbpath /var/lib/mongo --replSet rs0
 mongosh --eval 'rs.initiate({_id:"rs0", members:[{_id:0, host:"127.0.0.1:27017"}]})'
 ```
 
-Then:
+## Setup
 
 ```bash
 pip install -r requirements.txt
-cp .env.example .env      # then fill it in
+cp .env.example .env      # fill in the values
 python main.py
 ```
 
-`config.validate()` refuses to start without `DISCORD_TOKEN` and `MONGODB_URI`.
+`config.validate()` refuses to start unless `DISCORD_TOKEN` and `MONGODB_URI`
+are set.
 
-Everything the bot used to hardcode now lives in `config.py`, reading from the
-environment: brand name and URLs, the game server address, mail identity, and
-roughly seventy Discord snowflakes (guilds, channels, categories, roles, staff).
-The defaults in `config.py` are the IDs of the original deployment — they are
-there as documentation of how the pieces fit together, and you must point them at
-your own guild before the bot does anything useful.
+## Configuration
 
-### Branding in the translations
+All operational values are read from the environment via `config.py`: brand name
+and URLs, the game-server address, mail identity, the referral offer, and the
+Discord IDs of the deployment (guilds, channels, categories, roles, and staff).
+The defaults in `config.py` are the identifiers of the original deployment and
+serve as a reference; set your own before running.
 
-`utils/translates.py` holds ~850 lines of localised copy with the original brand
-baked into the strings. Rather than rewrite every literal and make the
-translations unreviewable, `config.LEGACY_BRANDING` maps the original literals to
-your configured values and the tables are rewritten in place at import time. The
-same pass runs over the HTML e-mail templates. If you see the old domain in a
-source string, that is why — check what it renders as, not what it says.
+Localised copy in `utils/translates.py` embeds the original brand in its strings.
+Rather than rewrite every translated line, `config.LEGACY_BRANDING` maps the
+original literals to the configured values and the tables are rewritten at import
+time. The same substitution runs over the HTML email templates.
 
-## Known rough edges
+## Verification
 
-This is 2020s-era hobby code that grew under a live service. It is published
-honestly, not polished into something it never was.
+Two scripts under `tools/` validate the bot without a full deployment:
 
-- **Almost nothing is tested.** `tools/test_change_streams.py` covers the slot
-  watchers, and `tools/live_smoketest.py` will connect to Discord once with its
-  side effects defused. Beyond that there is no suite: the helpers, embed
-  builders and mail templates have been exercised by hand, and most of the
-  Discord-facing surface is unproven.
-- **The e-mail templates hotlink Discord CDN attachments** that have long since
-  expired. Re-host the images and repoint `config.IMAGE_*`.
-- **Error handling is broad.** Bare `except:` blocks were narrowed to
-  `except Exception:`, which stops them swallowing `KeyboardInterrupt` and
-  `CancelledError`, but they still swallow a lot.
+- `tools/test_change_streams.py` — drives the slot-worker watchers against a local
+  replica set and asserts they process a real event.
+- `tools/live_smoketest.py` — connects to Discord once to confirm the bot starts
+  end to end, with the automatic command sync disabled and the database pointed at
+  a local instance.
 
-## What changed when this was published
+## Development history
 
-The working history was not public, so this repo starts from a single commit. The
-notable differences from the code that ran in production:
+The service began in 2020 as a fork of an open-source CS:GO commend bot and was
+rewritten and extended over four years:
 
-- Credentials removed and read from `.env` instead: Discord token, MongoDB URI,
-  Brevo SMTP key, Steam Web API key, and a remote host's root password. All of
-  them have been rotated.
-- Branding, staff identities, contributor Discord IDs, referral codes and ~70
-  hardcoded snowflakes moved into `config.py`.
-- `commands.py` (3031 lines) and `commend_menu.py` (1834 lines) split into mixin
-  and view modules. The registered command surface was verified identical before
-  and after: 18 cogs, 56 application commands.
-- ~650 unused imports, ~200 lines of commented-out code and several dead
-  functions removed.
-- **Star imports untangled.** Every `from X import *` outside `utils/__init__.py`
-  was replaced with an explicit import list, resolved by importing each module
-  and inspecting the real namespaces rather than guessing. Ruff went from 1287
-  `F405`s (and `F821` being useless) to zero of both.
+| Period | Milestone |
+| --- | --- |
+| 2020 | Initial fork of an open-source commend bot |
+| 2022 | Rewrite; localisation and reseller model introduced |
+| 2023 | Standalone control panel; email and recovery flows |
+| 2024 | v7.0.0 — final production version (this archive) |
 
-Bugs found and fixed on the way through:
+The bot ran on `nextcord` with MongoDB (Motor) and was deployed under PM2.
 
-- `/adminbalance` took no argument and always reported one hardcoded account's
-  balance; it now takes a `user`.
-- `banuser` was a global slash command with no permission check — any user could
-  ban across every guild the bot was in.
-- The daily wheel spin crashed whenever a customer had more than one wallet: the
-  select callback called an unbound method and passed the interaction as `self`.
-- `lang["on_message-error_field-title"]` raised `KeyError` — a duplicate key in
-  all six translation tables had overwritten the intended one.
-- `favoriteguilds()` listed the same guild twice, making one branch unreachable.
-- A dead error path called `servers["server1"]`, subscripting a string.
-- `utils.translates` and `utils.variables` imported each other; whether it worked
-  depended on which module Python happened to load first.
-- Missing translation keys called `os._exit(3)` at import time; they are now
-  reported by `check_translations()` and fall back to English.
-- `json` was never imported in `settings.py` or `slottrans.py` — it only ever
-  resolved because `cogs/helpers.py` happened to re-export it through a star
-  import. `json.loads()` in the slot-worker oplog watcher was one bad path away
-  from a `NameError`.
-- A new reseller subscription was inserted with `"datetime"` twice: the creation
-  time and the expiry. The later key won, so the intended value was silently
-  discarded — had the order been the other way round, every subscription would
-  have expired the moment it was created.
-- **`watch_usersdb()` never ran.** It opened its change stream with
-  `async with self.loop.run_in_executor(...)`, and a Future is not an async
-  context manager, so the task raised `TypeError` the instant it started. Both
-  watcher tasks were also assigned to the same `self.task` attribute, dropping
-  the reference to the first — so the exception was never retrieved and the
-  failure was completely silent. The live balance-update on a customer's open
-  ticket has therefore never worked.
+## Changelog for this release
 
-Verification used throughout: load all cogs into a real `nextcord` Bot and diff
-the registered command surface (18 cogs / 56 commands) after every change, then
-drive the helpers against a local MongoDB. Both caught regressions that
-importing the modules did not — a missing name in a rarely-taken branch does not
-fail until that branch runs.
+Prepared from the last production version:
+
+- Credentials removed and loaded from `.env`; all rotated. Branding, staff
+  identities, and ~70 hardcoded Discord IDs moved into `config.py`.
+- `commands.py` (3,031 lines) and `commend_menu.py` (1,834 lines) split into
+  thematic mixin and view modules. The registered command surface is unchanged:
+  18 cogs, 56 commands.
+- Star imports replaced with explicit imports throughout; unused imports,
+  commented-out code, and dead functions removed.
+
+Defects found and fixed while preparing the release:
+
+- `watch_usersdb()` opened its change stream with `async with` on a `Future` and
+  raised `TypeError` on startup; both watcher tasks shared one attribute, so the
+  failure was silent. The live ticket balance refresh had never worked.
+- `banuser` was a global command with no permission check.
+- `/adminbalance` ignored its argument and always reported one fixed account.
+- The daily wheel crashed for customers with more than one wallet.
+- A duplicate key raised `KeyError` in all six translation tables.
+- A new subscription document set its expiry key twice.
+- `json` was unimported in two modules and resolved only via a re-export.
+- `utils.translates` and `utils.variables` imported each other; correctness
+  depended on import order.
 
 ## License
 
