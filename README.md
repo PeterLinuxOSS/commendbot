@@ -191,13 +191,21 @@ time. The same substitution runs over the HTML email templates.
 
 ## Verification
 
-Two scripts under `tools/` validate the bot without a full deployment:
+Three scripts under `tools/` validate the bot without a full deployment:
 
+- `tools/load_check.py` — loads all 18 cogs into a real nextcord Bot and reports
+  the command surface. Needs no live infrastructure: motor connects lazily, so
+  MongoDB never has to be reachable just to import the cogs.
 - `tools/test_change_streams.py` — drives the slot-worker watchers against a local
   replica set and asserts they process a real event.
 - `tools/live_smoketest.py` — connects to Discord once to confirm the bot starts
   end to end, with the automatic command sync disabled and the database pointed at
   a local instance.
+
+CI (`.github/workflows/python-package.yml`) runs the first two on every push —
+compile check, lint, `load_check.py`, then a single-node replica set spun up in
+the job to run `test_change_streams.py`. `live_smoketest.py` needs a real
+Discord token and is deliberately left out of CI; run it by hand.
 
 ## Development history
 

@@ -1,7 +1,12 @@
-# This workflow will install Python dependencies, run tests and lint with a variety of Python versions
-# For more information see: https://docs.github.com/en/actions/automating-builds-and-tests/building-and-testing-python
+# CI for this archive: compiles, lints, loads every cog into a real Bot, and
+# drives the change-stream watchers against a real MongoDB replica set.
+#
+# Deliberately NOT run here: tools/live_smoketest.py. It logs the actual bot
+# into Discord and would need a live token in repo secrets - not something to
+# do unattended on every push to an archived project. Run it by hand; see
+# README.md's Verification section.
 
-name: Python package
+name: CI
 
 on:
   push:
@@ -10,31 +15,56 @@ on:
     branches: [ "main" ]
 
 jobs:
-  build:
-
+  verify:
     runs-on: ubuntu-latest
-    strategy:
-      fail-fast: false
-      matrix:
-        python-version: ["3.9", "3.10", "3.11"]
 
     steps:
-    - uses: actions/checkout@v4
-    - name: Set up Python ${{ matrix.python-version }}
-      uses: actions/setup-python@v3
-      with:
-        python-version: ${{ matrix.python-version }}
-    - name: Install dependencies
-      run: |
-        python -m pip install --upgrade pip
-        python -m pip install flake8 pytest
-        if [ -f requirements.txt ]; then pip install -r requirements.txt; fi
-    - name: Lint with flake8
-      run: |
-        # stop the build if there are Python syntax errors or undefined names
-        flake8 . --count --select=E9,F63,F7,F82 --show-source --statistics
-        # exit-zero treats all errors as warnings. The GitHub editor is 127 chars wide
-        flake8 . --count --exit-zero --max-complexity=10 --max-line-length=127 --statistics
-    - name: Test with pytest
-      run: |
-        pytest
+      - uses: actions/checkout@v4
+
+      - name: Set up Python 3.11
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+          pip install ruff
+
+      - name: Compile check
+        run: python -m compileall -q .
+
+      - name: Lint (undefined names, bad star-imports, syntax)
+        run: ruff check --select F821,F403,F405,E9 .
+
+      - name: Load every cog into a real Bot
+        env:
+          DISCORD_TOKEN: dummy
+          STEAM_API_KEY: dummy
+          # Deliberately unreachable: motor connects lazily, so cog loading
+          # and command registration never has to touch a real database.
+          MONGODB_URI: "mongodb://127.0.0.1:1/?directConnection=true&serverSelectionTimeoutMS=200"
+        run: python3 tools/load_check.py
+
+      - name: Start MongoDB (single-node replica set)
+        run: |
+          docker run -d --name mongo -p 27017:27017 mongo:7 --replSet rs0 --bind_ip_all
+          for i in $(seq 1 30); do
+            docker exec mongo mongosh --quiet --eval "db.runCommand('ping')" >/dev/null 2>&1 && break
+            sleep 1
+          done
+          docker exec mongo mongosh --quiet --eval \
+            "rs.initiate({_id:'rs0', members:[{_id:0, host:'127.0.0.1:27017'}]})"
+          for i in $(seq 1 30); do
+            state=$(docker exec mongo mongosh --quiet --eval "rs.status().members[0].stateStr" 2>/dev/null)
+            [ "$state" = "PRIMARY" ] && break
+            sleep 1
+          done
+
+      - name: Verify the slot-worker change-stream watchers
+        env:
+          DISCORD_TOKEN: dummy
+          STEAM_API_KEY: dummy
+          MONGODB_URI: "mongodb://127.0.0.1:27017/?directConnection=true"
+        run: python3 tools/test_change_streams.py
