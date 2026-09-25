@@ -1,15 +1,16 @@
 # commendbot
 
-Jadro systému **CommendBot** — logika vykonávania Steam/CS2 commendov (reporty/pochvaly účtov).
+Core of the **CommendBot** system — the engine that performs Steam / CS2 commends (positive account reports).
 
-## Súčasti
-- bot core + konfigurácia (`.env.example`)
+## Overview
+- Bot core with commend-execution logic
+- Configuration via `.env` (see `.env.example`)
 
-## Rodina CommendBot
-- **commendbot** — jadro bota (commend logika)
-- **commendbot-panel** — serverový ovládací panel (spúšťa a riadi klientov)
-- **commendbot-client** — klientský agent bežiaci na stroji (ovláda Steam/CS2)
-- **commendbot-slots** — slotový systém inštancií
-- **shopmanager** — predajný/objednávkový Discord bot (kľúče, licencie)
+## CommendBot family
+- **commendbot** — core bot (commend logic)
+- **commendbot-panel** — server-side control panel (dispatches & manages clients)
+- **commendbot-client** — client agent running on the machine (drives Steam/CS2)
+- **commendbot-slots** — slot-based instance manager
+- **shopmanager** — Discord sales/order bot (keys, licenses)
 
-_Súčasť ekosystému služby gameboosting._
+_Part of the gameboosting service ecosystem._
